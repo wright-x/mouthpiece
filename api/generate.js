@@ -1,5 +1,5 @@
 import { createJob, advanceJob } from "../lib/pipeline.js";
-import { json, cors, handle, checkAccess, readInput } from "../lib/http.js";
+import { json, cors, handle, checkAccess, readInput, resolvePhoto } from "../lib/http.js";
 
 // POST /api/generate
 //   photo     (file | base64 | data URL)  or  photoUrl
@@ -7,10 +7,12 @@ import { json, cors, handle, checkAccess, readInput } from "../lib/http.js";
 //   idea      free-text script idea
 //   duration  4 | 6 | 8 | 15 | 22 | 29   (seconds)
 //   aspect    optional "16:9" | "9:16"
+//   accessCode  required when ACCESS_CODE is set (or header x-access-code)
 //   ?wait=1   block (up to ~4.5 min) and return the finished video if it's ready
 export const POST = handle(async (req) => {
   const input = await readInput(req);
-  checkAccess(req, input);
+  await checkAccess(req, input);
+  await resolvePhoto(input);
   const started = Date.now();
   let out = await createJob(input);
 

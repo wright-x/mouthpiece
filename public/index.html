@@ -15,6 +15,7 @@
     --display:"Unbounded",system-ui,sans-serif; --serif:"Instrument Serif",Georgia,serif; --mono:"JetBrains Mono",ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
   html{background:var(--paper)}
   body{background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:15px;line-height:1.5;overflow-x:hidden}
   ::selection{background:var(--red);color:var(--paper)}
@@ -76,6 +77,8 @@
   .go:disabled{background:var(--mute);cursor:progress}
   .go .arr{display:inline-block;transition:transform .2s}
   .go:hover .arr{transform:translateX(.15em)}
+  .code{width:100%;max-width:520px;background:transparent;border:0;border-bottom:2px solid var(--ink);font-family:var(--display);font-weight:900;font-size:clamp(28px,4vw,48px);letter-spacing:.08em;color:var(--ink);padding:4px 0 10px;outline:none}
+  .code:focus{border-color:var(--red)}
   .err{color:var(--red);font-weight:700;margin-top:14px;min-height:1.5em}
 
   /* ---------- OUTPUT ---------- */
@@ -113,7 +116,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="bar"><span>Mouthpiece / v1</span><span>Gemini · Nano Banana · Veo 3.1</span><a href="#api">API ↓</a></div>
+    <div class="bar"><span>Mouthpiece / v1</span><span>Gemini · Nano Banana · Veo 3.1 Lite</span><a href="#api">API ↓</a></div>
     <h1><div>Mouth</div><div class="l2">Piece<span class="mouth" aria-hidden="true"></span></div></h1>
     <p class="tag">your face, <b>saying</b> anything.</p>
     <p class="sub">Drop a photo. Pick a world. Say what it should say. Flash writes the script as JSON, Nano Banana paints an avatar that looks like you, and Veo makes it talk, with voice and lip-sync.</p>
@@ -151,9 +154,16 @@
         <div class="durs" id="durs"></div>
         <div class="row">
           <label>Frame <select id="aspect"><option value="">Auto (by world)</option><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option></select></label>
-          <label id="codeWrap" hidden>Access code <input type="password" id="code" /></label>
         </div>
-        <p class="hint">Up to 8s is one Veo clip. Longer runs chain 7-second extensions, so it takes longer and costs more.</p>
+        <p class="hint">4–8s uses Veo 3.1 Lite, the cheapest tier. 15s+ switches to Veo 3.1 Fast and chains 7-second extensions (Lite can't extend), so it takes longer and costs more.</p>
+      </div>
+    </section>
+
+    <section class="step" id="codeWrap" hidden>
+      <div class="num">05<small>Access code</small></div>
+      <div>
+        <input type="password" id="code" class="code" autocomplete="current-password" spellcheck="false" autocapitalize="off" placeholder="••••••••" aria-label="Access code" />
+        <p class="hint">Case-sensitive. Ask the owner for it.</p>
       </div>
     </section>
 
@@ -194,13 +204,14 @@ setting   ugc | office | fantasy | cyberpunk | podcast | noir
 idea      script idea (free text)
 duration  4 | 6 | 8 | 15 | 22 | 29   seconds
 aspect    "9:16" | "16:9"  (optional)
+header    x-access-code: &lt;code&gt;   (or field accessCode)
 
 → { status, job, avatar, plan, videoUrl }</pre>
       </div>
     </div>
   </section>
 
-  <footer><span>Mouthpiece</span><span>One key: GEMINI_API_KEY</span><span>Videos are watermarked with SynthID</span></footer>
+  <footer><span>Mouthpiece</span><span>One key: GEMINI_API_KEY</span><span>Access-code protected</span><span>Videos are watermarked with SynthID</span></footer>
 </div>
 
 <script>
@@ -216,6 +227,7 @@ $("durs").innerHTML = DURS.map(s=>`<label><input type="radio" name="dur" value="
 
 const origin = location.origin;
 $("ex1").textContent = `curl -X POST ${origin}/api/generate \\
+  -H "x-access-code: $CODE" \\
   -F photo=@me.jpg \\
   -F setting=fantasy \\
   -F idea="Announce my new agency" \\
@@ -224,11 +236,12 @@ $("ex2").textContent = `curl "${origin}/api/status?job=$JOB"
 # → {"status":"rendering","job":"…"}   keep polling
 # → {"status":"done","videoUrl":"/api/video?uri=…"}`;
 $("ex3").textContent = `curl -X POST "${origin}/api/generate?wait=1" \\
+  -H "x-access-code: $CODE" \\
   -H "Content-Type: application/json" \\
   -d '{"photoUrl":"https://…/me.jpg",
        "setting":"ugc","idea":"…","duration":8}'`;
 
-fetch("/api/health").then(r=>r.json()).then(h=>{ if(h.accessCodeRequired) $("codeWrap").hidden=false; }).catch(()=>{});
+fetch("/api/health").then(r=>r.json()).then(h=>{ if(h.accessCodeRequired){ $("codeWrap").hidden=false; $("code").required=true; } }).catch(()=>{});
 
 // ---------- photo: downscale in the browser ----------
 let photoData = null;
