@@ -1,0 +1,8 @@
+{
+  "name": "mouthpiece",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Photo in, talking AI avatar video out. Gemini Flash -> Nano Banana -> Veo 3.1.",
+  "engines": { "node": ">=20" }
+}
