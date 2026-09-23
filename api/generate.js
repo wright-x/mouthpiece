@@ -5,7 +5,7 @@ import { json, cors, handle, checkAccess, readInput, resolvePhoto } from "../lib
 //   photo     (file | base64 | data URL)  or  photoUrl
 //   setting   ugc | office | fantasy | cyberpunk | podcast | noir
 //   idea      free-text script idea
-//   duration  4 | 6 | 8 | 15 | 22 | 29   (seconds)
+//   duration  8 | 15   (seconds)
 //   aspect    optional "16:9" | "9:16"
 //   accessCode  required when ACCESS_CODE is set (or header x-access-code)
 //   ?wait=1   block (up to ~4.5 min) and return the finished video if it's ready
