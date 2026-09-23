@@ -155,7 +155,7 @@
         <div class="row">
           <label>Frame <select id="aspect"><option value="">Auto (by world)</option><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option></select></label>
         </div>
-        <p class="hint">4–8s uses Veo 3.1 Lite, the cheapest tier. 15s+ switches to Veo 3.1 Fast and chains 7-second extensions (Lite can't extend), so it takes longer and costs more.</p>
+        <p class="hint">8s uses Veo 3.1 Lite, the cheapest tier. 15s switches to Veo 3.1 Fast and adds one 7-second extension (Lite can't extend), so it takes longer and costs more.</p>
       </div>
     </section>
 
@@ -202,7 +202,7 @@
 <pre>photo     file | base64 | data URL   (or photoUrl)
 setting   ugc | office | fantasy | cyberpunk | podcast | noir
 idea      script idea (free text)
-duration  4 | 6 | 8 | 15 | 22 | 29   seconds
+duration  8 | 15   seconds
 aspect    "9:16" | "16:9"  (optional)
 header    x-access-code: &lt;code&gt;   (or field accessCode)
 
@@ -219,7 +219,7 @@ const WORLDS = [
   ["ugc","UGC","selfie · vertical"],["office","Office","corporate · clean"],["fantasy","Fantasy","epic · magical"],
   ["cyberpunk","Cyber punk","neon · rain"],["podcast","Pod cast","studio · warm"],["noir","Noir","1940s · b&w"],
 ];
-const DURS = [4,6,8,15,22,29];
+const DURS = [8,15];
 const $ = (id) => document.getElementById(id);
 
 $("worlds").innerHTML = WORLDS.map(([k,w,d],i)=>`<label><input type="radio" name="world" value="${k}" ${i===0?"checked":""}><span class="w">${w.replace(" ","<br>")}</span><span class="d">${d}</span></label>`).join("");

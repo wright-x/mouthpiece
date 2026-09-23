@@ -22,7 +22,7 @@ Pick a world, type an idea, choose a length. Gemini writes the script, paints an
 | 📸 **A photo** of a face | 🧑‍🎨 An **avatar** that still looks like that person, restyled for the world you picked |
 | 🌍 **A setting**: UGC, Office, Fantasy, Cyberpunk, Podcast or Noir | 📝 A **timed script** as structured JSON |
 | 💬 **A script idea**, one line is enough | 🎬 A **video** of the avatar speaking the script to camera, with voice and lip-sync |
-| ⏱️ **A length**: 4, 6, 8, 15, 22 or 29 seconds | 🔌 All of it through a **REST API** too |
+| ⏱️ **A length**: 8 or 15 seconds | 🔌 All of it through a **REST API** too |
 
 Everything runs on **one Gemini API key**. No ElevenLabs and no separate TTS: Veo generates the voice itself from the quoted dialogue.
 
@@ -40,7 +40,7 @@ flowchart LR
     end
 
     S --> R{{Setting router<br/>lib/settings.js}}
-    D --> SEG[Segment plan<br/>8s + 7s + 7s…]
+    D --> SEG[Segment plan<br/>8s or 8s + 7s]
 
     P --> NB[Nano Banana 2<br/>gemini-3.1-flash-image]
     R -- avatar style --> NB
@@ -56,10 +56,10 @@ flowchart LR
     JS --> VP
     R -- camera · ambience --> VP
 
-    VP --> V{≤ 8s?}
-    V -- yes --> LITE[Veo 3.1 Lite<br/>image → video]
-    V -- no --> FAST[Veo 3.1 Fast<br/>image → video]
-    FAST --> EXT[Veo extend +7s<br/>repeat per segment]
+    VP --> V{8s or 15s?}
+    V -- 8s --> LITE[Veo 3.1 Lite<br/>image → video]
+    V -- 15s --> FAST[Veo 3.1 Fast<br/>image → video]
+    FAST --> EXT[Veo extend +7s]
     LITE --> OUT[🎬 MP4 with voice]
     EXT --> OUT
 ```
@@ -82,9 +82,9 @@ flowchart LR
    - **Photo → avatar.** `gemini-3.1-flash-image` (Nano Banana 2) repaints the person in the chosen world. The prompt tells it to keep their identity: face shape, eyes, skin tone, hair and age.
 3. **JSON → Veo.** Each segment becomes a directed Veo prompt: scene, performance, `They say, in a <voice>: "<dialogue>"`, camera move, ambient sound, and "no subtitles". The avatar is the first frame.
 4. **Render.**
-   - **4–8s** → one clip on **Veo 3.1 Lite**, the cheapest tier.
-   - **15/22/29s** → base clip on **Veo 3.1 Fast**, then 7-second **extensions** chained one per segment, keeping the same voice and scene. Lite can't extend.
-5. **Poll → play.** The client polls `/api/status`. When a clip finishes and more segments are left, the server starts the next extension by itself. The final MP4 streams through `/api/video`, because Google's file URLs need the API key.
+   - **8s** → one clip on **Veo 3.1 Lite**, the cheapest tier.
+   - **15s** → an 8s clip on **Veo 3.1 Fast**, then one 7-second **extension** that keeps the same voice and scene. Lite can't extend.
+5. **Poll → play.** The client polls `/api/status`. For 15s jobs, the server starts the extension by itself once the first clip finishes. The final MP4 streams through `/api/video`, because Google's file URLs need the API key.
 
 ### Settings routing
 
@@ -156,13 +156,13 @@ curl -X POST "https://mouthpiece-sooty.vercel.app/api/generate?wait=1" \
 | `photo` | file (multipart), base64, or data URL. **Or** `photoUrl` (https image) |
 | `setting` | `ugc` `office` `fantasy` `cyberpunk` `podcast` `noir` |
 | `idea` | free-text script idea |
-| `duration` | `4` `6` `8` `15` `22` `29` seconds |
+| `duration` | `8` or `15` seconds |
 | `aspect` | optional `9:16` / `16:9` (default depends on setting) |
 
 | Endpoint | |
 |---|---|
 | `POST /api/generate` | script + avatar + start Veo |
-| `GET/POST /api/status` | poll; chains extensions for 15s+ |
+| `GET/POST /api/status` | poll; runs the extension for 15s jobs |
 | `GET /api/video?uri=` | streams the MP4 (`&download=1` to save) |
 | `GET /api/health` | config + model check |
 
@@ -178,7 +178,7 @@ api/generate.js     POST: validate → access check → script ∥ avatar → st
 api/status.js       poll a job, auto-chain extensions
 api/video.js        proxy Veo's MP4 (keeps the API key server-side)
 api/health.js       config check
-lib/settings.js     the 6 worlds + duration → segment plan
+lib/settings.js     the 6 worlds + duration (8s / 15s) → segment plan
 lib/gemini.js       all Google calls: Flash, Nano Banana, Veo start/extend/poll
 lib/pipeline.js     orchestration
 lib/http.js         input parsing, access gate, signed job tokens
@@ -202,8 +202,8 @@ dev.js              local server that mimics Vercel
 |---|---|---|
 | Script → JSON | `gemini-3.8-flash` | structured output, sees the photo; costs fractions of a cent |
 | Avatar | `gemini-3.1-flash-image` (Nano Banana 2) | best likeness. Set `IMAGE_MODEL=gemini-3.1-flash-lite-image` for about half the price |
-| Video ≤ 8s | `veo-3.1-lite-generate-preview` | **cheapest Veo tier**, 720p |
-| Video 15s+ | `veo-3.1-fast-generate-preview` | Lite can't extend. Fast is the cheapest tier that can |
+| Video 8s | `veo-3.1-lite-generate-preview` | **cheapest Veo tier**, 720p |
+| Video 15s | `veo-3.1-fast-generate-preview` | Lite can't extend. Fast is the cheapest tier that can |
 
 Every model can be overridden with env vars. Veo bills per second of video, so **8s on Lite is the cheapest way to use this**.
 
